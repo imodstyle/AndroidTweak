@@ -212,10 +212,10 @@ sleep 0.1
 echo Fine Tune Input Boost
 if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq" ]; then
 chmod 644 /sys/module/cpu_boost/parameters/input_boost_freq
-write /sys/module/cpu_boost/parameters/input_boost_freq "0:960000 1:0 2:729600 3:0"
+write /sys/module/cpu_boost/parameters/input_boost_freq "0:0 1:0 2:0 3:0"
 chmod 444 /sys/module/cpu_boost/parameters/input_boost_freq
 chmod 644 /sys/module/cpu_boost/parameters/input_boost_ms
-write /sys/module/cpu_boost/parameters/input_boost_ms 50
+write /sys/module/cpu_boost/parameters/input_boost_ms 0
 chmod 444 /sys/module/cpu_boost/parameters/input_boost_ms
 else
 echo "*Input Boost is not avalible for your Kernel*"
@@ -405,6 +405,29 @@ write /sys/module/alarm/parameters/debug_mask 0
 write /sys/module/alarm_dev/parameters/debug_mask 0
 write /sys/module/binder/parameters/debug_mask 0
 write /sys/module/lowmemorykiller/parameters/debug_level 0
+
+# Tweak memory
+echo 20 > /proc/sys/vm/swappiness
+echo 100 > /proc/sys/vm/vfs_cache_pressure
+echo 80 > /proc/sys/vm/dirty_ratio
+echo 50 > /proc/sys/vm/dirty_background_ratio
+echo 4096 > /proc/sys/vm/min_free_kbytes
+
+# Set Zram - 512 Mb
+swapoff /dev/block/zram0 > /dev/null 2>&1
+write /sys/block/zram0/reset "1"
+write /sys/block/zram0/disksize "0"
+sleep 0.1
+write /sys/block/zram0/queue/add_random 0
+write /sys/block/zram0/queue/iostats 0
+write /sys/block/zram0/queue/nomerges 2
+write /sys/block/zram0/queue/rotational 0
+write /sys/block/zram0/queue/rq_affinity 1
+write /sys/block/zram0/queue/nr_requests 128
+write /sys/block/zram0/max_comp_streams 4
+write /sys/block/zram0/disksize $((512*1024*1024))
+mkswap /dev/block/zram0 > /dev/null 2>&1
+swapon /dev/block/zram0 > /dev/null 2>&1
 
 # Tweaking LMK
 write /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk "0"
