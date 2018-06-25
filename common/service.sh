@@ -209,7 +209,7 @@ fi
     write /sys/devices/soc/soc:qcom,bcl/mode -n enable
 sleep 0.1
 # Input Boost
-echo Fine Tune Input Boost
+echo Disable Input Boost
 if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq" ]; then
 chmod 644 /sys/module/cpu_boost/parameters/input_boost_freq
 write /sys/module/cpu_boost/parameters/input_boost_freq "0:0 1:0 2:0 3:0"
@@ -367,8 +367,8 @@ fi
 	fi
 		write /sys/module/lpm_levels/parameters/sleep_disabled N
 
-#Tweaks for other various Settings
-#Tweaking GPU
+# Tweaks for other various Settings
+# Tweaking GPU
 sleep 0.1
 echo GPU Tweaking
 write /sys/devices/soc/b00000.qcom,kgsl-3d0/devfreq/b00000.qcom,kgsl-3d0/governor msm-adreno-tz
@@ -450,6 +450,23 @@ then
    write $sd/queue/scheduler "noop"
    done
 fi
+if [[ $sch == *"zen"* ]]
+then
+    echo Tuning "zen" ...
+
+    for sd in /sys/block/sd* ; do
+    if [ -e sys/block/sda/queue/scheduler_hard ]; then
+	   write $sd/queue/scheduler_hard "zen"
+    fi
+    write $sd/queue/scheduler "zen"
+    write $sd/queue/iosched/sync_expire 300
+    write $sd/queue/iosched/async_expire 3000
+    write $sd/queue/iosched/fifo_batch 14
+    chmod 644 $sd/queue/iosched/sync_expire
+    write $sd/queue/iosched/sync_expire 300
+    chmod 444 $sd/queue/iosched/sync_expire
+	done
+fi
 if [[ $sch == *"cfq"* ]]
 then
     echo Tuning "cfq" ...
@@ -472,23 +489,6 @@ then
    write $sd/queue/iosched/slice_sync 100  
    write $sd/queue/iosched/target_latencymax_time 300 
    done
-fi
-if [[ $sch == *"zen"* ]]
-then
-    echo Tuning "zen" ...
-
-    for sd in /sys/block/sd* ; do
-    if [ -e sys/block/sda/queue/scheduler_hard ]; then
-	   write $sd/queue/scheduler_hard "zen"
-    fi
-    write $sd/queue/scheduler "zen"
-    write $sd/queue/iosched/sync_expire 300
-    write $sd/queue/iosched/async_expire 3000
-    write $sd/queue/iosched/fifo_batch 14
-    chmod 644 $sd/queue/iosched/sync_expire
-    write $sd/queue/iosched/sync_expire 300
-    chmod 444 $sd/queue/iosched/sync_expire
-	done
 fi
 
 for sd in /sys/block/sd* ; do
@@ -519,7 +519,7 @@ then
 write /proc/sys/net/ipv4/tcp_congestion_control westwood
 
 else
-	write /proc/sys/net/ipv4/tcp_congestion_control cubic
+write /proc/sys/net/ipv4/tcp_congestion_control cubic
 fi
 write /proc/sys/net/ipv4/tcp_ecn 2
 write /proc/sys/net/ipv4/tcp_dsack 1
@@ -528,40 +528,49 @@ write /proc/sys/net/ipv4/tcp_timestamps 1
 write /proc/sys/net/ipv4/tcp_sack 1
 write /proc/sys/net/ipv4/tcp_window_scaling 1
 
-	echo **[ GPU TWEAKS ]**
+echo **[ GPU TWEAKS ]**
 sleep 0.1
 if [ -e "/sys/module/adreno_idler" ]; then
 	write /sys/module/adreno_idler/parameters/adreno_idler_active "Y"
 	write /sys/module/adreno_idler/parameters/adreno_idler_idleworkload "11000"
 fi
 
-#Adrenoboost
-
 echo **[ Misc Tweaks ]**
 # Power Efficient
+if [ -e "/sys/module/workqueue/parameters/power_efficient" ]; then
 chmod 644 /sys/module/workqueue/parameters/power_efficient
 write /sys/module/workqueue/parameters/power_efficient "Y"
 chmod 444 /sys/module/workqueue/parameters/power_efficient
+
 # High impedance
+if [ -e "/sys/module/snd_soc_wcd9xxx/parameters/impedance_detect_en" ]; then
 chmod 644 /sys/module/snd_soc_wcd9xxx/parameters/impedance_detect_en 
 write /sys/module/snd_soc_wcd9xxx/parameters/impedance_detect_en 1
 chmod 444 /sys/module/snd_soc_wcd9xxx/parameters/impedance_detect_en 
-# High perf mode
+
+# High perf mode audio
 if [ -e "/sys/module/snd_soc_wcd9330/parameters/high_perf_mode" ]; then
 	write /sys/module/snd_soc_wcd9330/parameters/high_perf_mode 1
+	
 # Multi queue
 if [ -e "/sys/module/scsi_mod/parameters/use_blk_mq" ]; then
 	write /sys/module/scsi_mod/parameters/use_blk_mq Y
+	
 # DMA buffer
 if [ -e "/sys/module/sys/module/snd_pcm/parameters/maximum_substreams" ]; then
 	write /sys/module/sys/module/snd_pcm/parameters/maximum_substreams 8
 fi
+
 # Enable fast USB charging
+if [ -e "/sys/KERNEL/FAST_CHARGE/force_fast_charge" ]; then
 write /sys/KERNEL/FAST_CHARGE/force_fast_charge 1
+
 # Disable Gentle Fair Sleepers
-#write /sys/kernel/debug/sched_features NO_GENTLE_FAIR_SLEEPERS
-#write /sys/kernel/debug/sched_features NO_NEW_FAIR_SLEEPERS
-#write /sys/kernel/debug/sched_features NO_NORMALIZED_SLEEPER
+if [ -e "/sys/kernel/debug/sched_features" ]; then
+write /sys/kernel/debug/sched_features NO_GENTLE_FAIR_SLEEPERS
+write /sys/kernel/debug/sched_features NO_NEW_FAIR_SLEEPERS
+write /sys/kernel/debug/sched_features NO_NORMALIZED_SLEEPER
+
 echo Blocking wakelocks
 sleep 0.1
 if [ -e "/sys/module/wakeup/parameters/enable_msm_hsic_ws" ]; then
