@@ -3,8 +3,8 @@
 # Codename: TweakMod
 # Author: iModStyle @XDA
 # Device: Mi5 | MSM8996 Devices
-# Version : 0.2
-# Last Updated: 12.JUNE.2018
+# Version : 0.5
+# Last Updated: 25.JUNE.2018
 #===========================================================================#
 # *Credits 
 # *soniCron *Alcolawl *RogerF81 *Patalao *Mostafa Wael *Senthil360 *korom42
@@ -185,9 +185,7 @@ write /sys/devices/system/cpu/cpu2/cpufreq/interactive/fast_ramp_down 1
 write /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq 307200
 chmod 444 /sys/devices/system/cpu/cpu2/cpufreq/interactive/*
 sleep 0.1
-# Checking ROM...
-echo Checking ROM...
-sleep 0.1
+
 # Turn on core_ctl module and tune parameters if kernel has core_ctl module 
 if [ -e "/sys/devices/system/cpu/cpu2/core_ctl" ]; then
 write /sys/devices/system/cpu/cpu0/core_ctl/disable 0
@@ -365,7 +363,6 @@ fi
 		# This will enable C4, D4, D3, E4 and M3 LPMs
 		write /sys/module/lpm_levels/parameters/sleep_disabled N
 	fi
-		write /sys/module/lpm_levels/parameters/sleep_disabled N
 
 # Tweaks for other various Settings
 # Tweaking GPU
@@ -397,21 +394,20 @@ echo 0 > /sys/devices/soc/b00000.qcom,kgsl-3d0/devfreq/b00000.qcom,kgsl-3d0/adre
 fi
 fi
 
-# disable debugging
-write /sys/module/wakelock/parameters/debug_mask 0
-write /sys/module/userwakelock/parameters/debug_mask 0
-write /sys/module/earlysuspend/parameters/debug_mask 0
-write /sys/module/alarm/parameters/debug_mask 0
-write /sys/module/alarm_dev/parameters/debug_mask 0
-write /sys/module/binder/parameters/debug_mask 0
-write /sys/module/lowmemorykiller/parameters/debug_level 0
+# Disable debug for all module
+for n in /sys/module/*; do
+  write $n/parameters/debug_mask 0
+ done
+ for m in /sys/module/*; do
+  write $m/parameters/debug 0
+ done
 
 # Tweak memory
-echo 20 > /proc/sys/vm/swappiness
-echo 100 > /proc/sys/vm/vfs_cache_pressure
-echo 80 > /proc/sys/vm/dirty_ratio
-echo 50 > /proc/sys/vm/dirty_background_ratio
-echo 4096 > /proc/sys/vm/min_free_kbytes
+write /proc/sys/vm/swappiness 20
+write /proc/sys/vm/vfs_cache_pressure 100
+write /proc/sys/vm/dirty_ratio 80
+write /proc/sys/vm/dirty_background_ratio 50
+write /proc/sys/vm/min_free_kbytes 4096
 
 # Set Zram - 512 Mb
 swapoff /dev/block/zram0 > /dev/null 2>&1
@@ -430,6 +426,7 @@ mkswap /dev/block/zram0 > /dev/null 2>&1
 swapon /dev/block/zram0 > /dev/null 2>&1
 
 # Tweaking LMK
+write /sys/module/lowmemorykiller/parameters/debug_level 0
 write /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk "0"
 chmod 666 /sys/module/lowmemorykiller/parameters/minfree
 chown root /sys/module/lowmemorykiller/parameters/minfree
@@ -479,7 +476,7 @@ then
    write $sd/queue/iosched/back_seek_penalty 1  
    write $sd/queue/iosched/back_seek_max 16384  
    write $sd/queue/iosched/fifo_expire_sync 150  
-   write $ss/queue/iosched/fifo_expire_async 1500  
+   write $sd/queue/iosched/fifo_expire_async 1500  
    write $sd/queue/iosched/slice_idle 0  
    write $sd/queue/iosched/group_idle 8  
    write $sd/queue/iosched/low_latency 1  
@@ -492,23 +489,23 @@ then
 fi
 
 for sd in /sys/block/sd* ; do
-    write $sd/queue/add_random "0"
-    write $sd/queue/rotational "0"
-    write $sd/queue/iostats "0"
+write $sd/queue/add_random "0"
+write $sd/queue/rotational "0"
+write $sd/queue/iostats "0"
 done
 for i in /sys/block/loop*; do
-	  write $i/queue/add_random 0
-	  write $i/queue/iostats 0
-   	write $i/queue/nomerges 1
-   	write $i/queue/rotational 0
-   	write $i/queue/rq_affinity 1
+write $i/queue/add_random 0
+write $i/queue/iostats 0
+write $i/queue/nomerges 1
+write $i/queue/rotational 0
+write $i/queue/rq_affinity 1
 done
 for j in /sys/block/ram*; do
-	write $j/queue/add_random 0
-	write $j/queue/iostats 0
-	write $j/queue/nomerges 1
-	write $j/queue/rotational 0
-   	write $j/queue/rq_affinity 1
+write $j/queue/add_random 0
+write $j/queue/iostats 0
+write $j/queue/nomerges 1
+write $j/queue/rotational 0
+write $j/queue/rq_affinity 1
 done
 
 echo **[ TCP TWEAKS ]**
@@ -531,8 +528,8 @@ write /proc/sys/net/ipv4/tcp_window_scaling 1
 echo **[ GPU TWEAKS ]**
 sleep 0.1
 if [ -e "/sys/module/adreno_idler" ]; then
-	write /sys/module/adreno_idler/parameters/adreno_idler_active "Y"
-	write /sys/module/adreno_idler/parameters/adreno_idler_idleworkload "11000"
+write /sys/module/adreno_idler/parameters/adreno_idler_active "Y"
+write /sys/module/adreno_idler/parameters/adreno_idler_idleworkload "11000"
 fi
 
 echo **[ Misc Tweaks ]**
@@ -541,35 +538,64 @@ if [ -e "/sys/module/workqueue/parameters/power_efficient" ]; then
 chmod 644 /sys/module/workqueue/parameters/power_efficient
 write /sys/module/workqueue/parameters/power_efficient "Y"
 chmod 444 /sys/module/workqueue/parameters/power_efficient
+fi
 
 # High impedance
 if [ -e "/sys/module/snd_soc_wcd9xxx/parameters/impedance_detect_en" ]; then
 chmod 644 /sys/module/snd_soc_wcd9xxx/parameters/impedance_detect_en 
 write /sys/module/snd_soc_wcd9xxx/parameters/impedance_detect_en 1
 chmod 444 /sys/module/snd_soc_wcd9xxx/parameters/impedance_detect_en 
+fi
 
 # High perf mode audio
 if [ -e "/sys/module/snd_soc_wcd9330/parameters/high_perf_mode" ]; then
-	write /sys/module/snd_soc_wcd9330/parameters/high_perf_mode 1
-	
+chmod 644 /sys/module/snd_soc_wcd9330/parameters/high_perf_mode
+write /sys/module/snd_soc_wcd9330/parameters/high_perf_mode 1
+chmod 444 /sys/module/snd_soc_wcd9330/parameters/high_perf_mode
+fi
+
 # Multi queue
 if [ -e "/sys/module/scsi_mod/parameters/use_blk_mq" ]; then
-	write /sys/module/scsi_mod/parameters/use_blk_mq Y
-	
+chmod 644 /sys/module/scsi_mod/parameters/use_blk_mq
+write /sys/module/scsi_mod/parameters/use_blk_mq Y
+chmod 444 /sys/module/scsi_mod/parameters/use_blk_mq
+fi
+
 # DMA buffer
 if [ -e "/sys/module/sys/module/snd_pcm/parameters/maximum_substreams" ]; then
-	write /sys/module/sys/module/snd_pcm/parameters/maximum_substreams 8
+chmod 644 /sys/module/sys/module/snd_pcm/parameters/maximum_substreams
+write /sys/module/sys/module/snd_pcm/parameters/maximum_substreams 8
+chmod 444 /sys/module/sys/module/snd_pcm/parameters/maximum_substreams
+fi
+
+# HID-Magic tweak
+if [ -e /sys/module/hid_magicmouse/parameters/scroll_speed ]; then
+chmod 644 /sys/module/hid_magicmouse/parameters/scroll_speed
+write /sys/module/hid_magicmouse/parameters/scroll_speed 63
+chmod 444 /sys/module/hid_magicmouse/parameters/scroll_speed
+fi
+
+# Better Deepsleep
+for i in /sys/class/scsi_disk/i* ; do
+ write $i/cache_type "temporary none"
 fi
 
 # Enable fast USB charging
 if [ -e "/sys/KERNEL/FAST_CHARGE/force_fast_charge" ]; then
 write /sys/KERNEL/FAST_CHARGE/force_fast_charge 1
+fi
 
 # Disable Gentle Fair Sleepers
 if [ -e "/sys/kernel/debug/sched_features" ]; then
+chmod 644 /sys/kernel/debug/sched_features
 write /sys/kernel/debug/sched_features NO_GENTLE_FAIR_SLEEPERS
 write /sys/kernel/debug/sched_features NO_NEW_FAIR_SLEEPERS
 write /sys/kernel/debug/sched_features NO_NORMALIZED_SLEEPER
+write /sys/kernel/debug/sched_features NO_AFFINE_WAKEUPS
+write /sys/kernel/debug/sched_features NO_WAKEUP_OVERLAP
+write /sys/kernel/debug/sched_features NO_WAKEUP_PREEMPT
+write /sys/kernel/debug/sched_features NO_DOUBLE_TICK
+fi
 
 echo Blocking wakelocks
 sleep 0.1
@@ -663,6 +689,7 @@ chmod 644 /sys/module/wakeup/parameters/enable_wlan_ctrl_wake_ws
 write /sys/module/wakeup/parameters/enable_wlan_ctrl_wake_ws 0
 chmod 444 /sys/module/wakeup/parameters/enable_wlan_ctrl_wake_ws
 fi
+
 # Clean-up
 echo cache cleaning...
 sleep 0.1
