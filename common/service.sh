@@ -6,11 +6,6 @@
 # Version : 0.5
 # Last Updated: 25.JUNE.2018
 #===========================================================================#
-# *Credits 
-# *soniCron *Alcolawl *RogerF81 *Patalao *Mostafa Wael *Senthil360 *korom42
-# *and all who contributed on Nexus 5X/6P/OP3 Advanced Tweaks threads
-# *Please give proper credits when using this in your work!
-#===========================================================================#
 # helper functions to allow Android init like script
 function write() {
     echo -n $2 > $1
