@@ -570,11 +570,6 @@ write /sys/module/hid_magicmouse/parameters/scroll_speed 63
 chmod 444 /sys/module/hid_magicmouse/parameters/scroll_speed
 fi
 
-# Better Deepsleep
-for i in /sys/class/scsi_disk/i* ; do
- write $i/cache_type "temporary none"
-fi
-
 # Enable fast USB charging
 if [ -e "/sys/KERNEL/FAST_CHARGE/force_fast_charge" ]; then
 write /sys/KERNEL/FAST_CHARGE/force_fast_charge 1
